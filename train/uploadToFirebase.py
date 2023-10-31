@@ -17,8 +17,6 @@ database = firebase.database()
 class Firebase:
     def setProject(user_id, project_id, data):
         database.child("data").child(user_id).child(project_id).set(data)
-        print('setProject message --->>', data)
         
     def updateProject(user_id, project_id, data):
         database.child("data").child(user_id).child(project_id).update(data)
-        print('updateProject message --->>', data) 

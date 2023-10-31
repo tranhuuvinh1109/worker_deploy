@@ -31,20 +31,16 @@ class UnzipThread(threading.Thread):
             }
             Firebase.updateProject('user_'+user_id, prj_id, data_send)
             try:
-                # Đảm bảo chỉ một luồng giải nén tại một thời điểm
                 with unzip_lock:
-                    unrar(rar_file, destination_dir +"/"+ temp_project_id)
-                    # base_data_dir
-                    base_data_dir = destination_dir 
-                    print('export path => .....', base_data_dir + project_id)
-                    os.remove(rar_file)
+                    ZIP_DIR2 = os.path.join(BASE_DIR, 'assets/zip', project_id, project_id+'.zip')
+                    unzip(project_id, ZIP_DIR2)
                     if temp_queue:
                         temp_queue.pop(0)
-                    export_dir=project_id
-                    trainer.start_training(export_dir=export_dir)
+                    trainer.start_training(project_id)
                     for temp_item in temp_queue:
                         temp_rar_file, temp_project_id = temp_item
-                        unrar(temp_rar_file, destination_dir +"/"+ temp_project_id)
+                        ZIP_DIR3 = os.path.join(BASE_DIR, 'assets/zip', temp_project_id, temp_project_id+'.zip')
+                        unzip(temp_project_id, ZIP_DIR3)
                     
                 unzip_queue.task_done()
                 
@@ -66,11 +62,11 @@ class UploadAndUnzip():
             with open(zip_file_path, 'wb+') as destination:
                 for chunk in zip_file.chunks():
                     destination.write(chunk)
-            print('...9999//.',zip_file_path)
         except: 
-            print('>>>>>')
+            return {
+                "massage": "Error could not find zip file"
+            }
         
-        print('...9999//.',zip_file_path)
 
         unzip_queue.put((zip_file_path, project_id))
 
@@ -82,10 +78,9 @@ for i in range(num_worker_threads):
     worker.start()
 
 
-def unrar( new_name, file_path):
-    print('unzip ==>: ,',file_path , new_name)
+def unzip( save_name, file_path):
     try:
-        UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip/',new_name)
+        UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip/', save_name)
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
             zip_ref.extractall(UNZIP_DIR)
         return 1  

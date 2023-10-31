@@ -1,21 +1,10 @@
-import pyrebase
-from django.shortcuts import render
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing import image
-import numpy as np
-from time import sleep
 import os
-import threading
-import random
-import shutil
 
 from train.uploadToFirebase import Firebase
+from train.uploadAutoDrive import UploadAuto
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip')
@@ -44,7 +33,6 @@ class TrainModel:
                 'progress': '0',
                 'linkDrive': ''
             }
-        print(user_id_training, project_id_training, data_send)
         
         train_datagen = ImageDataGenerator(
             rescale=1.0 / 255.0,
@@ -84,7 +72,7 @@ class TrainModel:
             data_send = {
                 'status': 'training',
                 'progress': progress,
-'linkDrive': ''
+                'linkDrive': ''
             }
             Firebase.updateProject(user_id_training, project_id_training, data_send)
             model.fit(train_generator, epochs=1)
@@ -92,7 +80,6 @@ class TrainModel:
         
         file_save_dir = os.path.join(MODEL_DIR, save_name+'.h5')
         
-        # file_name = f'D:/Django/CNN/docker-cnn/model/{save_name}.h5'
         model.save(file_save_dir)
         # upload to Drive
         data_send = {
@@ -101,22 +88,20 @@ class TrainModel:
                 'linkDrive': ''
             }
         Firebase.updateProject(user_id_training, project_id_training, data_send)
-        
-        folder_container_train = base_data_dir + '/' + save_name
-        
+        link = UploadAuto.Upload_auto_drive(file_save_dir, save_name+'.h5')
         # upload to firebase
         data_send = {
                 'status': 'done',
                 'progress': '100',
-                'linkDrive': 'ssss'
+                'linkDrive': link
             }
         Firebase.updateProject(user_id_training, project_id_training, data_send)
-        print('done', index_start)
         index_start += 1
 
-    def start_training(self, export_dir):
-        parts = export_dir.split('_')[1].split('-')
-        train_data_dir = os.path.join(base_data_dir, export_dir, 'train')
+    def start_training(self, dataset_dir):
+        parts = dataset_dir.split('_')[1].split('-')
+        child_folder = os.listdir(os.path.join(base_data_dir, dataset_dir))[0]
+        train_data_dir = os.path.join(base_data_dir, dataset_dir, child_folder,'train')
         global user_id, project_id, projects_name
         project_id = parts[0]
         user_id = parts[1]
