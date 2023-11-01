@@ -47,6 +47,9 @@ import queue
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip')
 ZIP_DIR = os.path.join(BASE_DIR, 'assets/zip')
+from googleapiclient.discovery import build
+from google.oauth2 import service_account
+from googleapiclient.http import MediaFileUpload
 
 class TrainAPI(APIView):
     def post(self, request):
@@ -122,3 +125,43 @@ class CreateProjectAPI(APIView):
         else:
             return Response({'message': 'Error when unzip file'}, status=status.HTTP_400_BAD_REQUEST)
         # return Response({'message': 'Error when unzip file'}, status=status.HTTP_201_CREATED)
+
+
+class UploadAPI(APIView):
+    def get(self, request):
+        print(">>>DANG UP NE>>>>")
+        file_path= 'D:/My Project/Django/DEPLOY/worker_deploy/assets/model/project_12-1.h5'
+        file_name= 'vimmm'
+        SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR,'client_secrets.json')
+        SCOPES = ['https://www.googleapis.com/auth/drive.file']
+
+        credentials = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+        drive_service = build('drive', 'v3', credentials=credentials)
+
+
+        folder_id = '1aAIkfZS-anf5E6M8uj5nUka5B8Iy4yQn'
+
+        file_metadata = {
+            'name': file_name,
+            'parents': [folder_id]
+        }
+
+        media = MediaFileUpload(file_path, mimetype='application/octet-stream')
+
+        file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
+
+        if 'id' in file:
+            file_id = file['id']
+            file_url = "https://drive.google.com/file/d/" + file_id + "/view"
+            # https://drive.google.com/file/d/15aZezP89eENIpUh5pQ-HjivtWXOj0uY_/view
+            print("...up done...",file_url )
+            return Response({"message": "done", "file_url": file_url}, status=status.HTTP_201_CREATED)
+        else:
+            print("...up fail..." )
+            return Response({"message": "failed"}, status=status.HTTP_404_NOT_FOUND)

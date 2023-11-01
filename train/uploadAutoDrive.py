@@ -8,6 +8,7 @@ class UploadAuto:
     def Upload_auto_drive(file_path, file_name):
         print(">>>DANG UP NE>>>>", file_path, file_name)
         SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, 'client_secrets.json')
+        print(">>>DANG UP:", SERVICE_ACCOUNT_FILE)
         SCOPES = ['https://www.googleapis.com/auth/drive.file']
 
         credentials = service_account.Credentials.from_service_account_file(
@@ -34,6 +35,8 @@ class UploadAuto:
         if 'id' in file:
             file_id = file['id']
             file_url = "https://drive.google.com/file/d/" + file_id + "/view"
+            print("ok....", file_url)
             return file_url
         else:
-            return 0
+            print("not ok....")
+            return None
