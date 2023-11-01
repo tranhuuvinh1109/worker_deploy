@@ -1,37 +1,4 @@
-# from rest_framework.response import Response
-# from rest_framework.views import APIView
-# import os
-# from . import unzip_extract
-# from . import train_model
 
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip')
-# ZIP_DIR = os.path.join(BASE_DIR, 'assets/zip')
-
-# class TrainAPI(APIView):
-#     def post(self, request):
-#         # unzip
-#         if request.method == 'POST' and request.data.get('file'):
-#             print('===========================')
-#             user_id = request.data['user_id']
-#             project_id = request.data['project_id']
-#             file = request.data.get('file')
-#             new_name = 'project_' + str(project_id) + '-' + str(user_id)
-            
-#             if file.content_type == 'application/zip':
-#                 file_path = os.path.join(ZIP_DIR, new_name+'.zip')
-#                 with open(file_path, 'wb') as destination:
-#                     for chunk in file.chunks():
-#                         destination.write(chunk)
-#                 print('>>', file)     
-#                 result = unzip_extract.unzip_and_extract(file_path, new_name)
-#                 if result == 1:
-#                     print('unzip success')
-#                     return Response({'message': 'successfuly'}, status=200)
-#                 else:
-#                     print('unzip fail')
-#                     return Response({'message': 'fail'}, status=400)
-            
             
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -40,7 +7,6 @@ import os
 
 from train.uploadToFirebase import Firebase
 from . import unzip_extract
-from . import train_model
 import threading
 import queue
 
@@ -81,17 +47,14 @@ class TrainAPI(APIView):
             else:
                 print(f'Unzip failed for {new_name}')
             task_queue.task_done()
-class CreateProjectAPI(APIView):
+class ReceiveAPI(APIView):
     def post(self, request):
         user_id = request.data.get('user_id')
         project_id = request.data.get('project_id')
-        progress = 0
-        status_text = 'waiting'
-        link_drive = ''
-        file = request.FILES.get("file")
-        name = request.data.get("name")
-        create_time = '2023'
-        
+        file = request.FILES.get('file')
+        name = request.data.get('name')
+        create_time = request.data.get('create_time')
+
         data_send = {
                 'status': 'waiting',
                 'progress': '0',

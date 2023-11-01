@@ -53,6 +53,7 @@ num_worker_threads = 1
 
 class UploadAndUnzip():
     def saveZipFile(zip_file, project_id):
+        print("do ... save")
         project_dir = os.path.join(ZIP_DIR, project_id)
         os.makedirs(project_dir, exist_ok=True)
 
@@ -63,6 +64,7 @@ class UploadAndUnzip():
                 for chunk in zip_file.chunks():
                     destination.write(chunk)
         except: 
+            print("loi....")
             return {
                 "massage": "Error could not find zip file"
             }
@@ -79,6 +81,7 @@ for i in range(num_worker_threads):
 
 
 def unzip( save_name, file_path):
+    print("do,,, unzip")
     try:
         UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip/', save_name)
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
