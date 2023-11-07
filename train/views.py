@@ -1,43 +1,9 @@
-# from rest_framework.response import Response
-# from rest_framework.views import APIView
-# import os
-# from . import unzip_extract
-# from . import train_model
-
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip')
-# ZIP_DIR = os.path.join(BASE_DIR, 'assets/zip')
-
-# class TrainAPI(APIView):
-#     def post(self, request):
-#         # unzip
-#         if request.method == 'POST' and request.data.get('file'):
-#             print('===========================')
-#             user_id = request.data['user_id']
-#             project_id = request.data['project_id']
-#             file = request.data.get('file')
-#             new_name = 'project_' + str(project_id) + '-' + str(user_id)
-            
-#             if file.content_type == 'application/zip':
-#                 file_path = os.path.join(ZIP_DIR, new_name+'.zip')
-#                 with open(file_path, 'wb') as destination:
-#                     for chunk in file.chunks():
-#                         destination.write(chunk)
-#                 print('>>', file)     
-#                 result = unzip_extract.unzip_and_extract(file_path, new_name)
-#                 if result == 1:
-#                     print('unzip success')
-#                     return Response({'message': 'successfuly'}, status=200)
-#                 else:
-#                     print('unzip fail')
-#                     return Response({'message': 'fail'}, status=400)
-            
             
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 import os
-
+from django.http import JsonResponse
 from train.uploadToFirebase import Firebase
 from . import unzip_extract
 from . import train_model
@@ -165,3 +131,8 @@ class UploadAPI(APIView):
         else:
             print("...up fail..." )
             return Response({"message": "failed"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class RootAPI(APIView):
+    def get(self, request):
+        return JsonResponse({"message": "Hey this is my API running 🥳"})
