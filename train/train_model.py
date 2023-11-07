@@ -3,7 +3,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 import os
 from PIL import Image
-
+import shutil
 from train.uploadToFirebase import Firebase
 from train.uploadAutoDrive import UploadAuto
 
@@ -97,6 +97,19 @@ class TrainModel:
                 'linkDrive': link
             }
         Firebase.updateProject(user_id_training, project_id_training, data_send)
+        UNZIP_FILE = os.path.join(BASE_DIR, 'assets/unzip', save_name)
+        ZIP_FILE = os.path.join(BASE_DIR, 'assets/zip', save_name)
+        if link: 
+            try:
+                print("deleting... MODEL_FILE ->", file_save_dir)
+                shutil.rmtree(ZIP_FILE)
+                shutil.rmtree(UNZIP_FILE)
+                os.remove(file_save_dir)
+                print(f"Done delete {UNZIP_FILE}")
+            except FileNotFoundError:
+                print(f"FOlder {UNZIP_FILE} í not exist.")
+            except Exception as e:
+                print(f"Error: {str(e)}")
         index_start += 1
 
     def start_training(self, dataset_dir):
