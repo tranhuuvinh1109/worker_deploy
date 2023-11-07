@@ -136,3 +136,8 @@ class UploadAPI(APIView):
 class RootAPI(APIView):
     def get(self, request):
         return JsonResponse({"message": "Hey this is my API running 🥳"})
+    
+
+class CheckAPI(APIView):
+    def get(self, request):
+        return Response({"message": "Hey this is my API running 🥳"}, status=status.HTTP_200_OK)
