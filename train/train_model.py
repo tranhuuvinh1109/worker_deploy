@@ -6,6 +6,7 @@ from PIL import Image
 import shutil
 from train.uploadToFirebase import Firebase
 from train.uploadAutoDrive import UploadAuto
+from train.validate_dataset import validate_dataset
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip')
@@ -107,20 +108,62 @@ class TrainModel:
                 os.remove(file_save_dir)
                 print(f"Done delete {UNZIP_FILE}")
             except FileNotFoundError:
-                print(f"FOlder {UNZIP_FILE} í not exist.")
+                print(f"FOlder {UNZIP_FILE} is not exist.")
             except Exception as e:
                 print(f"Error: {str(e)}")
         index_start += 1
 
     def start_training(self, dataset_dir):
         parts = dataset_dir.split('_')[1].split('-')
+
         child_folder = os.listdir(os.path.join(base_data_dir, dataset_dir))[0]
+        if child_folder == "__MACOSX":
+            child_folder = os.listdir(os.path.join(base_data_dir, dataset_dir))[1]
+        
+
+        print("child_folder: ", child_folder)
+        
+
+
+
         train_data_dir = os.path.join(base_data_dir, dataset_dir, child_folder,'train')
+        child_folder_dir = os.path.join(base_data_dir, dataset_dir, child_folder)
+
+        print("child_folder_dir: ", child_folder_dir)
+
+
+
         global user_id, project_id, projects_name
         project_id = parts[0]
         user_id = parts[1]
-        self.train(train_data_dir)
+        
+        # Định nghĩa biến save_name ở đây
+        save_name = 'project_' + project_id + '-' + user_id
 
-        print("All training completed.")
+
+        # Kiểm tra tính hợp lệ của dataset từ child_folder_dir trước khi tiến hành huấn luyện
+        validation_result = validate_dataset(child_folder_dir)
+        print("last " + child_folder_dir)
+
+
+        if validation_result is None:
+            # Nếu dataset hợp lệ, tiến hành huấn luyện
+            self.train(train_data_dir)  # Truyền biến save_name vào phương thức train
+            print("All training completed.")
+        else:
+            # Nếu dataset không hợp lệ, in ra thông báo lỗi cụ thể
+            print(f"Không thể bắt đầu huấn luyện do {validation_result}")
+
+            UNZIP_FILE = os.path.join(BASE_DIR, 'assets/unzip', save_name)
+            ZIP_FILE = os.path.join(BASE_DIR, 'assets/zip', save_name)
+
+            # # Xóa thư mục UNZIP_FILE (nếu tồn tại)
+            # if os.path.isdir(UNZIP_FILE):
+            #         shutil.rmtree(UNZIP_FILE)
+            # if os.path.isdir(ZIP_FILE):
+            #         shutil.rmtree(ZIP_FILE)
+
+
+
 
 trainer = TrainModel()
