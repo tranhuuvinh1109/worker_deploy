@@ -56,7 +56,7 @@ class CreateProjectAPI(APIView):
         link_drive = ''
         file = request.FILES.get("file")
         name = request.data.get("name")
-        create_time = '2023'
+        create_time = request.data.get('create_time')
         
         data_send = {
                 'status': 'waiting',
