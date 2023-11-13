@@ -10,9 +10,18 @@ from . import train_model
 import threading
 import queue
 
+from django.shortcuts import render
+from django.http import HttpRequest
+
+import easyocr
+
+
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip')
 ZIP_DIR = os.path.join(BASE_DIR, 'assets/zip')
+
+
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from googleapiclient.http import MediaFileUpload
@@ -141,3 +150,35 @@ class RootAPI(APIView):
 class CheckAPI(APIView):
     def get(self, request):
         return Response({"message": "Hey this is my API running 🥳"}, status=status.HTTP_200_OK)
+    
+
+class TestOCR(APIView):
+    def post(self, request):
+        image_path = request.data.get('file')
+        print('--->', image_path)
+        
+        reader = easyocr.Reader(['en'])
+        result = reader.readtext(image_path)
+        print('result ==> : ', result) 
+        rs = [item[1] for item in result]
+
+
+        return Response({"image_path": image_path, 'result': rs}, status=status.HTTP_200_OK)  
+
+class ListFileAPI(APIView):
+    def get(self, request):
+        MEDIA_DIR = os.path.join(BASE_DIR, 'worker_deploy/media')
+        all_files = os.listdir(MEDIA_DIR)
+        print(all_files)
+
+        return Response({"data": all_files}, status=status.HTTP_200_OK)  
+    
+
+class RealtimeAPI(APIView):
+    def get(self,request):
+        Firebase.setProject(10,4, {
+            "user": "vinh"
+        })
+        return Response({"data": {
+            "user": "vinh"
+        }}, status=status.HTTP_200_OK)  
