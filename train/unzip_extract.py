@@ -20,16 +20,19 @@ class UnzipThread(threading.Thread):
     def run(self):
         while True:
             rar_file, project_id = unzip_queue.get()
-            print(f"Unzipping project ---> {project_id}...")
-            parts = project_id.split('_')[1].split('-')
-            user_id  = parts[1]
-            prj_id = parts[0]
+            parts = project_id.split('_')[1]
+            name = project_id.split('_')[0]
+            create_at  = parts
+            print('--25', create_at)
             data_send = {
+                'name': name,
                 'status': 'extracting',
                 'progress': '0',
-                'linkDrive': ''
+                'linkModel': '',
+                'createAt': create_at,
             }
-            Firebase.updateProject('user_'+user_id, prj_id, data_send)
+            Firebase.setProcessModel(create_at, data_send)
+            print(f"Unzipping project ---> {project_id}...", data_send,  os.path.join(BASE_DIR, 'assets/zip'))
             try:
                 with unzip_lock:
                     ZIP_DIR2 = os.path.join(BASE_DIR, 'assets/zip', project_id, project_id+'.zip')
@@ -62,13 +65,11 @@ class UploadAndUnzip():
             with open(zip_file_path, 'wb+') as destination:
                 for chunk in zip_file.chunks():
                     destination.write(chunk)
+            unzip_queue.put((zip_file_path, project_id))
         except: 
             return {
                 "massage": "Error could not find zip file"
             }
-        
-
-        unzip_queue.put((zip_file_path, project_id))
 
         return 1
 

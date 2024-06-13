@@ -17,6 +17,10 @@ database = firebase.database()
 class Firebase:
     def setProject(user_id, project_id, data):
         database.child("data").child(user_id).child(project_id).set(data)
+    def setProcessModel(create_at, data):
+        database.child("vcare").child(create_at).set(data)
         
     def updateProject(user_id, project_id, data):
         database.child("data").child(user_id).child(project_id).update(data)
+    def updateImage( data):
+        database.child("image").set(data)

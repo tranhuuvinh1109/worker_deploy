@@ -1,4 +1,8 @@
             
+import base64
+import pickle
+import struct
+import cv2
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -10,9 +14,18 @@ from . import train_model
 import threading
 import queue
 
+from django.shortcuts import render
+from django.http import HttpRequest
+
+import easyocr
+
+
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UNZIP_DIR = os.path.join(BASE_DIR, 'assets/unzip')
 ZIP_DIR = os.path.join(BASE_DIR, 'assets/zip')
+
+
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from googleapiclient.http import MediaFileUpload
@@ -92,6 +105,48 @@ class CreateProjectAPI(APIView):
             return Response({'message': 'Error when unzip file'}, status=status.HTTP_400_BAD_REQUEST)
         # return Response({'message': 'Error when unzip file'}, status=status.HTTP_201_CREATED)
 
+class RetrainModelAPI(APIView):
+    def post(self, request):
+        progress = 0
+        status_text = 'waiting'
+        file = request.FILES.get("file")
+        print("=====", file)
+        create_time = request.data.get('create_time')
+        name = request.data.get('name')
+        
+        data_send = {
+                'name': name,
+                'status': 'waiting',
+                'progress': '0',
+                'linkModel': '',
+                'createAt': create_time,
+            }
+            # create in firebase project user:
+        Firebase.setProcessModel(create_time ,data_send)
+
+        # unzip file
+        flagExport = unzip_extract.UploadAndUnzip.saveZipFile(
+            file, name + '_' + str(create_time))
+
+        if flagExport == 1:
+            data_send = {
+                'name': name,
+                'status': 'unzipped',
+                'progress': '0',
+                'linkModel': '',
+                'createAt': create_time,
+            }
+            Firebase.setProcessModel(
+                create_time, data_send)
+            response_data = {
+                'message': 'Project created successfully',
+                'data': ''
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'message': 'Error when unzip file'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class UploadAPI(APIView):
     def get(self, request):
@@ -141,3 +196,61 @@ class RootAPI(APIView):
 class CheckAPI(APIView):
     def get(self, request):
         return Response({"message": "Hey this is my API running 🥳"}, status=status.HTTP_200_OK)
+    
+
+class TestOCR(APIView):
+    def post(self, request):
+        image_path = request.data.get('file')
+        print('--->', image_path)
+        
+        reader = easyocr.Reader(['en'])
+        result = reader.readtext(image_path)
+        print('result ==> : ', result) 
+        rs = [item[1] for item in result]
+
+
+        return Response({"image_path": image_path, 'result': rs}, status=status.HTTP_200_OK)  
+
+class ListFileAPI(APIView):
+    def get(self, request):
+        MEDIA_DIR = os.path.join(BASE_DIR, 'worker_deploy/media')
+        all_files = os.listdir(MEDIA_DIR)
+        print(all_files)
+
+        return Response({"data": all_files}, status=status.HTTP_200_OK)  
+    
+
+class RealtimeAPI(APIView):
+    def get(self,request):
+        Firebase.setProject(10,4, {
+            "user": "vinh"
+        })
+        return Response({"data": {
+            "user": "vinh"
+        }}, status=status.HTTP_200_OK)  
+    
+class StreamAPI(APIView):
+    def get(self, request):
+        cap = cv2.VideoCapture(0)
+
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            
+            # Đóng gói dữ liệu frame
+            data = pickle.dumps(frame)
+            data_length = len(data)
+            data_packed = struct.pack("I", data_length) + data
+            data_encoded = base64.b64encode(data_packed).decode('utf-8')
+            # Gửi dữ liệu frame đến Firebase
+            Firebase.updateImage(data_encoded)
+            print("11")
+
+           
+
+        # Giải phóng tài nguyên
+        cap.release()
+        cv2.destroyAllWindows()
+
+        return Response("Stream ended")

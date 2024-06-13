@@ -16,10 +16,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from train.views import RootAPI
+from pathlib import Path
+import os
+from django.conf.urls.static import static
+BASE_DIR = Path(__file__).resolve().parent.parent
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'worker_deploy/media')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', RootAPI.as_view()),
     path('api/', include('train.urls'))
-]
+]+ static(MEDIA_URL, document_root=MEDIA_ROOT)

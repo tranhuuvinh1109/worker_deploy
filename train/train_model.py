@@ -25,14 +25,16 @@ projects_name = []
 index_start = 0
 
 class TrainModel:
-    def train(self, train_data_dir):
+    def train(self, train_data_dir, name):
+        print('Training', train_data_dir)
         global user_id, project_id, index_start
         user_id_training = 'user_' + user_id
         project_id_training = project_id
         data_send = {
                 'status': 'training',
                 'progress': '0',
-                'linkDrive': ''
+                'linkModel': '',
+                'createAt': project_id,
             }
         
         train_datagen = ImageDataGenerator(
@@ -71,55 +73,50 @@ class TrainModel:
         for epoch in range(epochs):
             progress = (epoch + 1) / epochs * 100
             data_send = {
+                'name': name,
                 'status': 'training',
                 'progress': progress,
-                'linkDrive': ''
+                'linkModel': '',
+                'createAt': project_id,
             }
-            Firebase.updateProject(user_id_training, project_id_training, data_send)
+            print('--78', project_id_training)
+            Firebase.setProcessModel(project_id_training, data_send)
             model.fit(train_generator, epochs=1)
-        save_name = 'project_'+project_id+'-'+user_id
+        save_name = 'project_'+project_id
         
         file_save_dir = os.path.join(MODEL_DIR, save_name+'.h5')
         
         model.save(file_save_dir)
         # upload to Drive
         data_send = {
-                'status': 'push to drive',
-                'progress': '100',
-                'linkDrive': ''
+                'name': name,
+                'status': 'saving model',
+                'progress': progress,
+                'linkModel': '',
+                'createAt': project_id,
             }
-        Firebase.updateProject(user_id_training, project_id_training, data_send)
-        link = UploadAuto.Upload_auto_drive(file_save_dir, save_name+'.h5')
+        Firebase.setProcessModel( project_id_training, data_send)
+        print('93--', project_id_training, name)
         # upload to firebase
         data_send = {
+                'name': name,
                 'status': 'done',
                 'progress': '100',
-                'linkDrive': link
+                'linkModel': os.path.join(MODEL_DIR, save_name+'.h5'),
+                'createAt': project_id,
             }
-        Firebase.updateProject(user_id_training, project_id_training, data_send)
-        UNZIP_FILE = os.path.join(BASE_DIR, 'assets/unzip', save_name)
-        ZIP_FILE = os.path.join(BASE_DIR, 'assets/zip', save_name)
-        if link: 
-            try:
-                print("deleting... MODEL_FILE ->", file_save_dir)
-                shutil.rmtree(ZIP_FILE)
-                shutil.rmtree(UNZIP_FILE)
-                os.remove(file_save_dir)
-                print(f"Done delete {UNZIP_FILE}")
-            except FileNotFoundError:
-                print(f"FOlder {UNZIP_FILE} í not exist.")
-            except Exception as e:
-                print(f"Error: {str(e)}")
+        print('100--', project_id_training)
+        Firebase.setProcessModel( project_id_training, data_send)
         index_start += 1
 
     def start_training(self, dataset_dir):
-        parts = dataset_dir.split('_')[1].split('-')
+        parts = dataset_dir.split('_')[1]
+        name = dataset_dir.split('_')[0]
         child_folder = os.listdir(os.path.join(base_data_dir, dataset_dir))[0]
         train_data_dir = os.path.join(base_data_dir, dataset_dir, child_folder,'train')
         global user_id, project_id, projects_name
-        project_id = parts[0]
-        user_id = parts[1]
-        self.train(train_data_dir)
+        project_id = parts
+        self.train(train_data_dir, name)
 
         print("All training completed.")
 
