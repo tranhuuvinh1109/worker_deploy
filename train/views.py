@@ -1,4 +1,8 @@
             
+import base64
+import pickle
+import struct
+import cv2
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -101,6 +105,44 @@ class CreateProjectAPI(APIView):
             return Response({'message': 'Error when unzip file'}, status=status.HTTP_400_BAD_REQUEST)
         # return Response({'message': 'Error when unzip file'}, status=status.HTTP_201_CREATED)
 
+class RetrainModelAPI(APIView):
+    def post(self, request):
+        progress = 0
+        status_text = 'waiting'
+        file = request.FILES.get("file")
+        create_time = request.data.get('create_time')
+        
+        data_send = {
+                'status': 'waiting',
+                'progress': '0',
+                'linkModel': '',
+                'createAt': create_time,
+            }
+            # create in firebase project user:
+        Firebase.setProcessModel(create_time ,data_send)
+
+        # unzip file
+        flagExport = unzip_extract.UploadAndUnzip.saveZipFile(
+            file, 'retrain_' + str(create_time))
+
+        if flagExport == 1:
+            data_send = {
+                'status': 'waiting',
+                'progress': '0',
+                'linkModel': '',
+                'createAt': create_time,
+            }
+            Firebase.setProcessModel(
+                create_time, data_send)
+            response_data = {
+                'message': 'Project created successfully',
+                'data': ''
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'message': 'Error when unzip file'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class UploadAPI(APIView):
     def get(self, request):
@@ -182,3 +224,29 @@ class RealtimeAPI(APIView):
         return Response({"data": {
             "user": "vinh"
         }}, status=status.HTTP_200_OK)  
+    
+class StreamAPI(APIView):
+    def get(self, request):
+        cap = cv2.VideoCapture(0)
+
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            
+            # Đóng gói dữ liệu frame
+            data = pickle.dumps(frame)
+            data_length = len(data)
+            data_packed = struct.pack("I", data_length) + data
+            data_encoded = base64.b64encode(data_packed).decode('utf-8')
+            # Gửi dữ liệu frame đến Firebase
+            Firebase.updateImage(data_encoded)
+            print("11")
+
+           
+
+        # Giải phóng tài nguyên
+        cap.release()
+        cv2.destroyAllWindows()
+
+        return Response("Stream ended")
