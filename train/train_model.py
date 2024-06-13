@@ -25,7 +25,8 @@ projects_name = []
 index_start = 0
 
 class TrainModel:
-    def train(self, train_data_dir):
+    def train(self, train_data_dir, name):
+        print('Training', train_data_dir)
         global user_id, project_id, index_start
         user_id_training = 'user_' + user_id
         project_id_training = project_id
@@ -72,6 +73,7 @@ class TrainModel:
         for epoch in range(epochs):
             progress = (epoch + 1) / epochs * 100
             data_send = {
+                'name': name,
                 'status': 'training',
                 'progress': progress,
                 'linkModel': '',
@@ -87,15 +89,17 @@ class TrainModel:
         model.save(file_save_dir)
         # upload to Drive
         data_send = {
+                'name': name,
                 'status': 'saving model',
                 'progress': progress,
                 'linkModel': '',
                 'createAt': project_id,
             }
         Firebase.setProcessModel( project_id_training, data_send)
-        print('93--', project_id_training)
+        print('93--', project_id_training, name)
         # upload to firebase
         data_send = {
+                'name': name,
                 'status': 'done',
                 'progress': '100',
                 'linkModel': os.path.join(MODEL_DIR, save_name+'.h5'),
@@ -107,11 +111,12 @@ class TrainModel:
 
     def start_training(self, dataset_dir):
         parts = dataset_dir.split('_')[1]
+        name = dataset_dir.split('_')[0]
         child_folder = os.listdir(os.path.join(base_data_dir, dataset_dir))[0]
         train_data_dir = os.path.join(base_data_dir, dataset_dir, child_folder,'train')
         global user_id, project_id, projects_name
         project_id = parts
-        self.train(train_data_dir)
+        self.train(train_data_dir, name)
 
         print("All training completed.")
 

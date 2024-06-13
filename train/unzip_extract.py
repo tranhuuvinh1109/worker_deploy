@@ -21,9 +21,11 @@ class UnzipThread(threading.Thread):
         while True:
             rar_file, project_id = unzip_queue.get()
             parts = project_id.split('_')[1]
+            name = project_id.split('_')[0]
             create_at  = parts
             print('--25', create_at)
             data_send = {
+                'name': name,
                 'status': 'extracting',
                 'progress': '0',
                 'linkModel': '',

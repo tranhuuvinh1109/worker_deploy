@@ -111,8 +111,10 @@ class RetrainModelAPI(APIView):
         status_text = 'waiting'
         file = request.FILES.get("file")
         create_time = request.data.get('create_time')
+        name = request.data.get('name')
         
         data_send = {
+                'name': name,
                 'status': 'waiting',
                 'progress': '0',
                 'linkModel': '',
@@ -123,11 +125,12 @@ class RetrainModelAPI(APIView):
 
         # unzip file
         flagExport = unzip_extract.UploadAndUnzip.saveZipFile(
-            file, 'retrain_' + str(create_time))
+            file, name + '_' + str(create_time))
 
         if flagExport == 1:
             data_send = {
-                'status': 'waiting',
+                'name': name,
+                'status': 'unzipped',
                 'progress': '0',
                 'linkModel': '',
                 'createAt': create_time,
