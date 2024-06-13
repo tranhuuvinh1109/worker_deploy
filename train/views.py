@@ -110,6 +110,7 @@ class RetrainModelAPI(APIView):
         progress = 0
         status_text = 'waiting'
         file = request.FILES.get("file")
+        print("=====", file)
         create_time = request.data.get('create_time')
         name = request.data.get('name')
         
